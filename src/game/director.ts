@@ -3,8 +3,8 @@ import { eventPoint, regionAt, type Point } from './map';
 import { STEP, type Moment, type World } from './engine';
 export type CaptureGrade='complete'|'effective'|'late'|'missed'|'waived';
 export const GRADE_LABEL:Record<CaptureGrade,string>={complete:'完整捕捉',effective:'有效捕捉',late:'补到结果',missed:'漏拍',waived:'合理取舍'};
-export type CaptureRecord={event:Moment;grade:CaptureGrade;gain:number;lead:number;note:string};
-export type ChatMessage={id:number;at:number;row:number;text:string;tone:'praise'|'roast'|'fair'};
+export type CaptureRecord={event:Moment;grade:CaptureGrade;gain:number;lead:number;note:string;replayGain?:number};
+export type ChatMessage={id:number;at:number;row:number;text:string;tone:'praise'|'roast'|'fair';replay?:boolean};
 type Track={pre:number;preRun:number;burst:number;run:number;post:number;quality:number;samples:number;first:number;view:string};
 
 /** Spatial coverage uses the exact camera rectangle also consumed by the renderer. */
@@ -70,6 +70,15 @@ export class Director {
   this.score=Math.max(0,this.score+gain);e.caught=grade==='complete'||grade==='effective';
   const r={event:e,grade,gain,lead,note};this.records.push(r);this.feedback=`${GRADE_LABEL[grade]} · ${e.kind}${gain?` ${gain>0?'+':''}${gain}`:' · 免罚'}`;
   this.react(r,time);return r;
+ }
+ awardReplay(event:Moment,time:number){
+  const record=this.records.find(r=>r.event===event);
+  if(!record||record.grade!=='missed'||record.replayGain)return false;
+  const gain=Math.min(50,Math.max(1,Math.floor(event.points*.1)));
+  record.replayGain=gain;this.score+=gain;
+  this.feedback=`回放补救 · ${event.kind} +${gain}（本事件仅一次）`;
+  this.chat.push({id:++this.chatId,at:time,row:0,text:'回放补上了！这次看清是谁操作了',tone:'fair',replay:true});
+  return true;
  }
  private enqueue(lines:string[],time:number,tone:ChatMessage['tone']){
   for(const text of lines){const row=this.chatId%3,at=Math.max(time,this.rowTimes[row]+7.3);this.rowTimes[row]=at;this.chat.push({id:++this.chatId,at,row,text,tone});}

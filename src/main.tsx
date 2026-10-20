@@ -47,7 +47,7 @@ function App() {
    if(session.running){
     bank+=delta;
     while(bank>=STEP&&session.world.time<duration){
-     session.world.step();session.replay.record(session.world);const wasReplay=session.replay.active;session.replay.step(STEP);session.director.camera.step(session.world,STEP);
+     session.world.step();session.replay.record(session.world);const wasReplay=session.replay.active;session.replay.step(STEP,session.world,session.director);session.director.camera.step(session.world,STEP);
      for(const result of session.director.observe(session.world,!wasReplay)){
       if(sound&&audio.current&&result.grade!=='waived'){const osc=audio.current.createOscillator(),gain=audio.current.createGain();osc.connect(gain);gain.connect(audio.current.destination);osc.frequency.value=result.gain>0?740:220;gain.gain.setValueAtTime(.04,audio.current.currentTime);gain.gain.exponentialRampToValueAtTime(.001,audio.current.currentTime+.15);osc.start();osc.stop(audio.current.currentTime+.16);}
      }
@@ -87,13 +87,13 @@ function App() {
   <Scoreboard world={w} series={series} round={round} demo={demo}/>
   <section className="battle-stage" aria-label="比赛直播主画面">
    <div className="main-arena"><Arena/></div>
-   {(replayMenu||replay.active)&&<div className="replay-controls">{replay.active?<><b>回放中 · 直播仍在进行</b><span>剩余 {Math.ceil(replay.end-replay.cursor)} 秒 · 顶部比分及小地图为实时</span><button onClick={()=>replay.stop()}>返回直播 ×</button></>:<><b>补播最近画面</b>{[5,8].map(seconds=><button key={seconds} onClick={()=>{if(replay.start(seconds)){replay.director.camera.focus({...d.camera.center});setReplayMenu(false);}}}>最近 {seconds} 秒</button>)}{w.moments.filter(e=>e.done&&w.time-e.time<8).slice(-2).map((e,i)=><button key={i} onClick={()=>{if(replay.start(Math.min(11,w.time-e.time+3))){replay.director.camera.focus(eventPoint(e.kind,e.lane,e.winner));setReplayMenu(false);}}}>{clock(e.time)} {e.kind}</button>)}<button onClick={()=>setReplayMenu(false)}>收起 ×</button><small>沿用当前取景位置，可拖动回放画面；直播继续，回放不算直播捕捉。</small></>}</div>}<div className="battle-vignette"/>
+   {(replayMenu||replay.active)&&<div className="replay-controls">{replay.active?<><b>回放中 · 直播仍在进行</b><span>剩余 {Math.ceil(replay.end-replay.cursor)} 秒 · 顶部比分及小地图为实时</span><button onClick={()=>replay.stop()}>返回直播 ×</button></>:<><b>补播最近画面</b>{[5,8].map(seconds=><button key={seconds} onClick={()=>{if(replay.start(seconds)){replay.director.camera.focus({...d.camera.center});setReplayMenu(false);}}}>最近 {seconds} 秒</button>)}{w.moments.filter(e=>e.done&&w.time-e.time<8).slice(-2).map((e,i)=><button key={i} onClick={()=>{if(replay.start(Math.min(11,w.time-e.time+3))){replay.director.camera.focus(eventPoint(e.kind,e.lane,e.winner));setReplayMenu(false);}}}>{clock(e.time)} {e.kind}</button>)}<button onClick={()=>setReplayMenu(false)}>收起 ×</button><small>沿用当前取景位置，可拖动回放画面；直播继续，回放不算直播捕捉，漏拍补清可获一次少量补救分。</small></>}</div>}<div className="battle-vignette"/>
    <div className="broadcast-bug"><span className="live-pill">{replay.active?'↶ 回放 '+clock(replay.cursor):'● LIVE'}</span><b>{cameraLabel}</b><small>{ZOOMS[viewDirector.camera.zoom].name}</small></div>
    <div className="phase-bug"><span>{phase}</span><b>剩余 {clock(duration-w.time)}</b></div>
    <Roster world={w} team={0} selected={d.camera.heroId} onFollow={follow} disabled={mode!=='play'||replay.active}/><Roster world={w} team={1} selected={d.camera.heroId} onFollow={follow} disabled={mode!=='play'||replay.active}/>
 
    <div className="match-feed"><div className="feed-title">赛事动态 <span>MATCH FEED</span></div>{w.moments.filter(e=>e.done).slice(-3).reverse().map(e=><div className={`feed-item ${e.winner?'red':'blue'}`} key={w.moments.indexOf(e)}><time>{clock(e.time)}</time><span>{TEAMS[e.winner??0].name}<b>{e.kind}</b></span></div>)}{!count&&<p>双方已进入峡谷<br/>等待第一波交锋</p>}</div>
-   <Danmaku director={d} time={w.time} enabled={danmaku&&!replay.active}/>
+   <Danmaku director={d} time={w.time} enabled={danmaku} replayOnly={replay.active}/>
 
    <div className="camera-crosshair" aria-hidden="true"><i/><i/><i/><i/></div>
    <div className="live-feedback" aria-live="polite"><span>OB</span>{d.feedback}</div>

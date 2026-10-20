@@ -19,3 +19,19 @@ test('watching replay does not count as capturing concurrent live action',()=>{
  while(w.time<12){w.step();d.camera.step(w,STEP);d.observe(w,false);}
  assert.equal(d.records[0].grade,'missed');assert.equal(d.caught,0);
 });
+
+test('missed highlight earns a small replay reward only once, and wrong framing earns nothing',()=>{
+ const w=new World(2),d=new Director(),r=new Replay();
+ w.moments=[{time:10,lane:1,kind:'团战四杀',points:500,done:false,winner:0}];
+ while(w.time<12){w.step();r.record(w);d.observe(w,false);}
+ const initial=d.score;
+ r.start(5);r.director.camera.center={x:50,y:50};r.director.camera.target={x:50,y:50};
+ while(r.active)r.step(STEP,w,d);
+ assert.equal(d.score,initial);
+ r.start(5);
+ while(r.active)r.step(STEP,w,d);
+ assert.equal(d.score,initial+50);assert.equal(d.records[0].grade,'missed');assert.equal(d.caught,0);
+ assert.equal(d.chat.filter(m=>m.replay).length,1);
+ r.start(5);while(r.active)r.step(STEP,w,d);
+ assert.equal(d.score,initial+50);assert.equal(d.chat.filter(m=>m.replay).length,1);
+});
