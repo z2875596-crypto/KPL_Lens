@@ -34,7 +34,7 @@ export class World {
  get dragon(){return this.neutrals.find(n=>n.id==='tyrant')!;} 
  get overlord(){return this.neutrals.find(n=>n.id==='overlord')!;}
  random(){this.seed=(Math.imul(this.seed,1664525)+1013904223)>>>0;return this.seed/4294967296;}
- get gold(){return [0,1].map(team=>Math.floor(this.heroes.filter(h=>h.team===team).reduce((sum,h)=>sum+h.gold,0)));}
+ get gold(){return [0,1].map(team=>Math.floor(this.heroes.filter(h=>h.team===team).reduce((sum,h)=>sum+Math.floor(h.gold),0)));}
  get matchWinner(){const crystal=this.moments.find(e=>e.done&&e.kind==='水晶告破');if(crystal)return crystal.winner??0;return this.gold[0]===this.gold[1]?(this.moments.filter(e=>e.done).at(-1)?.winner??0):this.gold[0]>this.gold[1]?0:1;}
  get activeMoments(){return this.moments.filter(e=>this.time>=e.time-7&&(this.time<e.time+3||isObjective(e.kind)&&!e.done));}
  get active(){return this.activeMoments[0];}

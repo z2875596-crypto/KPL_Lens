@@ -79,7 +79,7 @@ test('reward receipts reconcile individual and team income and expire without pr
  while(w.time<10.1)w.step();
  assert.equal(w.income.filter(g=>g.source.startsWith('击杀')).length,4);
  for(const h of w.heroes){const rewards=w.income.filter(g=>g.heroId===h.id).reduce((sum,g)=>sum+g.amount,0);assert.ok(Math.abs(h.gold-(300+w.time*18+rewards))<.001);}
- for(const team of [0,1])assert.equal(w.gold[team],Math.floor(w.heroes.filter(h=>h.team===team).reduce((sum,h)=>sum+h.gold,0)));
+ for(const team of [0,1])assert.equal(w.gold[team],Math.floor(w.heroes.filter(h=>h.team===team).reduce((sum,h)=>sum+Math.floor(h.gold),0)));
  const recipient=w.income.find(g=>g.source.startsWith('击杀'))!.heroId;assert.ok(w.recentIncome(recipient).length);
  w.time+=2.1;assert.equal(w.recentIncome(recipient).length,0);
 });
