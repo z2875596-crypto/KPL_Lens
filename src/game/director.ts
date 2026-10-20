@@ -32,12 +32,12 @@ export class Director {
  focus(point:Point,time:number){if(Math.hypot(point.x-this.camera.target.x,point.y-this.camera.target.y)>20)this.cut(time);this.camera.focus(point);}
  beginPan(time:number){this.cut(time);}
  private describe(world:World){const hero=world.heroes.find(h=>h.id===this.camera.heroId);return hero?`跟拍${hero.team?'红方':'蓝方'}${hero.name.split('·')[0]}（${regionAt(hero)}）`:`镜头停在${regionAt(this.camera.center)}`;}
- observe(world:World):CaptureRecord[] {
+ observe(world:World,onAir=true):CaptureRecord[] {
   const frame=this.camera.frame();
   for(const e of world.moments){
    if(world.time<e.time-4||world.time>e.time+1.25||this.settled.has(e))continue;
    let t=this.tracks.get(e);if(!t){t={pre:0,preRun:0,burst:0,run:0,post:0,quality:0,samples:0,first:Infinity,view:''};this.tracks.set(e,t);}
-   const q=coverage(world,e,frame),dt=world.time-e.time;
+   const q=onAir?coverage(world,e,frame):0,dt=world.time-e.time;
    if(Math.abs(dt)<STEP*1.2)t.view=this.describe(world);
    if(q>0){t.first=Math.min(t.first,world.time);t.quality+=q;t.samples++;if(dt<-.6){t.preRun+=STEP;t.pre=Math.max(t.pre,t.preRun);}if(dt>=-.6&&dt<=.4){t.run+=STEP;t.burst=Math.max(t.burst,t.run);}if(dt>.4)t.post+=STEP;}
    else {t.run=0;t.preRun=0;}
