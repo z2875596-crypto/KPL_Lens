@@ -13,12 +13,12 @@ export function drawSignature(g:Graphics,s:Signature,time:number,focused:boolean
   for(let k=-2;k<=2;k++){const a=p.spin+k*.53;g.moveTo(p.x,p.y).lineTo(p.x+Math.cos(a)*(r-4),p.y+Math.sin(a)*(r-4)).stroke({color:0xffebc0,width:1.5,alpha:opacity});}
   g.circle(p.x,p.y,3).fill({color:0xffdf9b,alpha:opacity});return;
  }
- if(!detailed){
+ if(!detailed&&s.kind!=='hook'){
   // Keep each caster's signature readable while only three full effects compete for space.
   const colors={mirror:0xb1e8ff,umbrella:0xff917d,charge:0x7fe3b0,matrix:0xffd572,thunder:0xb4b1ff,slam:0xdba16b,spear:0x82d5ff,formation:0xd2b17d,dragonfire:0xffa45e,hook:0x72e0db,fan:0xff9ecb};
   const ink=colors[s.kind];
   if(s.kind==='matrix'||s.kind==='formation')g.rect(x-14,y+3,28,17).stroke({color:ink,width:2,alpha:alpha*.65});
-  else if(s.kind==='hook'||s.kind==='thunder')g.moveTo(x-16,y+13).lineTo(x-4,y+4).lineTo(x+4,y+17).lineTo(x+16,y+7).stroke({color:ink,width:2,alpha:alpha*.65});
+  else if(s.kind==='thunder')g.moveTo(x-16,y+13).lineTo(x-4,y+4).lineTo(x+4,y+17).lineTo(x+16,y+7).stroke({color:ink,width:2,alpha:alpha*.65});
   else g.moveTo(x-16,y+12).quadraticCurveTo(x,y-3,x+16,y+12).stroke({color:ink,width:3,alpha:alpha*.65});
   return;
  }
@@ -59,8 +59,8 @@ export function drawSignature(g:Graphics,s:Signature,time:number,focused:boolean
   return;
  }
  if(s.kind==='hook'){
-  const length=Math.sin(Math.PI*f)*150,bx=x+dx*length,by=y+dy*length;
-  for(let k=0;k<7;k++){const t=k/7;g.ellipse(x+dx*length*t,y+dy*length*t,3,2).stroke({color:0x72e0db,width:1.5,alpha});}
+  const length=Math.sin(Math.PI*f)*150,bx=s.tipX??x+dx*length,by=s.tipY??y+dy*length;
+  for(let k=0;k<7;k++){const t=k/7;g.ellipse(x+(bx-x)*t,y+(by-y)*t,3,2).stroke({color:0x72e0db,width:1.5,alpha});}
   g.moveTo(bx-dx*10,by-dy*10).lineTo(bx+dx*8,by+dy*8).lineTo(bx+dy*10,by-dx*10).lineTo(bx-dx*5+dy*7,by-dy*5-dx*7).stroke({color:0xa0f5eb,width:3,alpha});return;
  }
  if(s.kind==='mirror'){
@@ -85,4 +85,5 @@ export function drawSignature(g:Graphics,s:Signature,time:number,focused:boolean
   for(const offset of [-10,10])g.ellipse(px-dx*22-dy*offset,py-dy*22+dx*offset,5,3).fill({color:0xe7d8ad,alpha:alpha*.6});
  }
 }
+
 

@@ -1,11 +1,11 @@
 import type { Hero } from './engine';
 export const signatureName={mirror:'见影',umbrella:'岑中归月',charge:'单刀赴会',matrix:'指令 · 创造',thunder:'狂雷击',slam:'豪烈万军',spear:'天翔之龙',formation:'玄雍众将',dragonfire:'薄日掌火',hook:'湮灭之锁',fan:'绽放之舞'};
 export type SignatureKind=keyof typeof signatureName;
-export type Signature = { kind:SignatureKind; at:number; x:number; y:number; dx:number; dy:number };
+export type Signature = { kind:SignatureKind; at:number; x:number; y:number; dx:number; dy:number; hookedId?:number; hookedAt?:number; tipX?:number; tipY?:number; comboFired?:boolean; comboTarget?:number; comboHit?:boolean };
 export const HERO_SIGNATURES:readonly SignatureKind[]=['mirror','umbrella','matrix','thunder','slam','charge','spear','formation','dragonfire','hook','fan'];
 // Only current combat observations can start a cast; no event schedule is read here.
 export function updateSignature(h:Hero,target:Hero|undefined,time:number){
- if(h.hp<=0||h.recovery!=='none'||(!h.attacking&&h.signature?.kind!=='fan')){h.signature=null;return;}
+ if(h.hp<=0||h.recovery!=='none'||(!h.attacking&&h.signature?.kind!=='fan'&&h.signature?.kind!=='hook')){h.signature=null;return;}
  if(h.signature&&time-h.signature.at>=1.25)h.signature=null;
  const kind=HERO_SIGNATURES[h.artId];
  if(!h.attacking||!kind||h.signature||time<h.nextSignature||h.cast<.22||h.cast>.4||!target||target.hp<=0)return;

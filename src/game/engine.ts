@@ -1,3 +1,4 @@
+import { updateCombos } from './combo';
 import { createNeutrals, hitNeutral, respawnNeutrals, isObjective, objectiveId } from './neutrals';
 import { updateSignature, signatureDestination, type Signature } from './signature';
 import { HERO_ART, heroLineups } from './heroArt';
@@ -134,7 +135,13 @@ export class World {
     for(const h of victims.slice(0,count)){h.deadUntil=this.time+4;h.hp=0;h.deaths++;this.kills[winner]++;const allies=available.filter(a=>a.team===winner);const killer=allies.find(a=>a.role===1)??allies[0];killer.kills++;this.reward(killer,300,`击杀${h.name}`);for(const ally of allies.filter(a=>a!==killer)){ally.assists++;this.reward(ally,50,`助攻${h.name}`);}}
    }
   }
-  for(const h of this.heroes){const target=this.heroes.find(o=>o.id===h.targetId);updateSignature(h,target,this.time);observeActivity(h,this.time,priorHP[h.id],h.hp,h.hp>0&&h.attacking&&h.cast>=.22&&h.cast<.75&&!!target&&target.hp>0&&Math.hypot(target.x-h.x,target.y-h.y)<=310);if(h.hp<priorHP[h.id]-.01){h.lastDamage=this.time;h.trailHp=Math.max(h.trailHp,priorHP[h.id]);}else if(h.hp>h.trailHp)h.trailHp=h.hp;if(this.time-h.lastDamage>.6)h.trailHp=Math.max(h.hp,h.trailHp-STEP*30);}
+  // Hold a ready fan briefly while a nearby ally's hook is actually in flight.
+  for(const h of [...this.heroes].sort((a,b)=>Number(b.artId===9)-Number(a.artId===9))){
+   const hook=h.artId===10&&this.heroes.find(a=>a.team===h.team&&a.hp>0&&a.signature?.kind==='hook'&&this.time-a.signature.at<1&&Math.hypot(a.x-h.x,a.y-h.y)<230);
+   if(!hook||h.signature)updateSignature(h,this.heroes.find(o=>o.id===h.targetId),this.time);
+  }
+  updateCombos(this.heroes,this.time,STEP);
+  for(const h of this.heroes){const target=this.heroes.find(o=>o.id===h.targetId);observeActivity(h,this.time,priorHP[h.id],h.hp,h.hp>0&&h.attacking&&h.cast>=.22&&h.cast<.75&&!!target&&target.hp>0&&Math.hypot(target.x-h.x,target.y-h.y)<=310);if(h.hp<priorHP[h.id]-.01){h.lastDamage=this.time;h.trailHp=Math.max(h.trailHp,priorHP[h.id]);}else if(h.hp>h.trailHp)h.trailHp=h.hp;if(this.time-h.lastDamage>.6)h.trailHp=Math.max(h.hp,h.trailHp-STEP*30);}
   return [...due,...neutralDue];
  }
 }
