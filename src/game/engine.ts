@@ -8,6 +8,9 @@ export const STEP = 1 / 30;
 export type Hero = Activity & { neutralId:string|null; nextNeutralAttack:number; nextSmite:number; signature:Signature|null; nextSignature:number; id: number; artId:number; name: string; team: number; lane: number; x: number; y: number; hp: number; deadUntil: number; role:number; facing:number; attacking:boolean; shield:number; kills:number; deaths:number; assists:number; gold:number; trailHp:number; lastDamage:number; vx:number; vy:number; cast:number; targetId:number; dashing:boolean; recovery:'none'|'retreat'|'recall'|'fountain'; recoveryAt:number };
 export type Moment = { time: number; lane: number; kind: string; points: number; done: boolean; caught?: boolean; winner?:number; actors?:number[]; operatorId?:number; stolen?:boolean };
 export class World {
+ income:{heroId:number;amount:number;source:string;at:number}[]=[];
+ reward(h:Hero,amount:number,source:string){h.gold+=amount;this.income.push({heroId:h.id,amount,source,at:this.time});if(this.income.length>80)this.income.shift();}
+ recentIncome(id:number){return this.income.filter(g=>g.heroId===id&&this.time-g.at<2);}
  time=0; heroes:Hero[]=[]; moments:Moment[]=[]; seed:number; kills=[0,0]; dragons=[0,0]; overlords=[0,0]; neutrals=createNeutrals(); crystals=[100,100];
  constructor(seed=Date.now()>>>0){
   this.seed=seed;
@@ -114,9 +117,9 @@ export class World {
    const smite=event&&h.id===this.keyHero(event).id&&this.time>=event.time-.15&&this.time>=h.nextSmite&&Math.hypot(h.x-n.x,h.y-n.y)<85;
    if(smite)h.nextSmite=this.time+8;
    if(hitNeutral(n,h,smite?40:n.boss?3:20,this.time)){
-    if(n.boss){const counts=n.id==='tyrant'?this.dragons:this.overlords;counts[h.team]++;for(const ally of this.heroes.filter(a=>a.team===h.team))ally.gold+=100;
+    if(n.boss){const counts=n.id==='tyrant'?this.dragons:this.overlords;counts[h.team]++;for(const ally of this.heroes.filter(a=>a.team===h.team))this.reward(ally,100,n.name);
      if(event){event.done=true;event.time=this.time;event.operatorId=h.id;event.winner=h.team;event.stolen=n.damage[1-h.team]>n.damage[h.team];neutralDue.push(event);}
-    }else h.gold+=65;
+    }else this.reward(h,65,n.name);
    }
   }
   const due=this.moments.filter(m=>!m.done&&!isObjective(m.kind)&&m.time<=this.time);
@@ -128,7 +131,7 @@ export class World {
     const count=m.kind==='团战四杀'?4:m.kind==='双杀'?2:1;
     // Show the pursued hero actually turning on their pursuer.
     if(m.kind==='极限反杀')victims.sort((a,b)=>Number(b.role===1)-Number(a.role===1));
-    for(const h of victims.slice(0,count)){h.deadUntil=this.time+4;h.hp=0;h.deaths++;this.kills[winner]++;const allies=available.filter(a=>a.team===winner);const killer=allies.find(a=>a.role===1)??allies[0];killer.kills++;killer.gold+=300;for(const ally of allies.filter(a=>a!==killer)){ally.assists++;ally.gold+=50;}}
+    for(const h of victims.slice(0,count)){h.deadUntil=this.time+4;h.hp=0;h.deaths++;this.kills[winner]++;const allies=available.filter(a=>a.team===winner);const killer=allies.find(a=>a.role===1)??allies[0];killer.kills++;this.reward(killer,300,`击杀${h.name}`);for(const ally of allies.filter(a=>a!==killer)){ally.assists++;this.reward(ally,50,`助攻${h.name}`);}}
    }
   }
   for(const h of this.heroes){const target=this.heroes.find(o=>o.id===h.targetId);updateSignature(h,target,this.time);observeActivity(h,this.time,priorHP[h.id],h.hp,h.hp>0&&h.attacking&&h.cast>=.22&&h.cast<.75&&!!target&&target.hp>0&&Math.hypot(target.x-h.x,target.y-h.y)<=310);if(h.hp<priorHP[h.id]-.01){h.lastDamage=this.time;h.trailHp=Math.max(h.trailHp,priorHP[h.id]);}else if(h.hp>h.trailHp)h.trailHp=h.hp;if(this.time-h.lastDamage>.6)h.trailHp=Math.max(h.hp,h.trailHp-STEP*30);}
