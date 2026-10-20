@@ -1,9 +1,18 @@
 import { Graphics } from 'pixi.js';
-import type { Signature } from './signature';
+import { fanPosition, type Signature } from './signature';
 export function drawSignature(g:Graphics,s:Signature,time:number,focused:boolean,detailed=true){
  const age=time-s.at,f=Math.min(1,age/1.25),alpha=Math.min(1,age/.12, (1.25-age)/.25)*(focused?.85:.55);
  if(alpha<=0)return;
  const {x,y,dx,dy}=s,c=s.kind==='mirror'?0xb1e8ff:s.kind==='umbrella'?0xff917d:0x7fe3b0;
+ if(s.kind==='fan'){
+  const p=fanPosition(s,time),r=focused?30:25,opacity=focused?.98:.88;
+  // Retain the actual projectile even when other effects are reduced.
+  if(detailed){const tail=fanPosition(s,Math.max(s.at,time-.07));g.moveTo(tail.x,tail.y).lineTo(p.x,p.y).stroke({color:0xffb6d7,width:5,alpha:alpha*.3});}
+  g.moveTo(p.x,p.y).arc(p.x,p.y,r,p.spin-1.15,p.spin+1.15).closePath().fill({color:0xf477b6,alpha:opacity}).stroke({color:0x79335d,width:3,alpha:opacity});
+  g.arc(p.x,p.y,r-3,p.spin-1.15,p.spin+1.15).stroke({color:0xffe5ed,width:3,alpha:opacity});
+  for(let k=-2;k<=2;k++){const a=p.spin+k*.53;g.moveTo(p.x,p.y).lineTo(p.x+Math.cos(a)*(r-4),p.y+Math.sin(a)*(r-4)).stroke({color:0xffebc0,width:1.5,alpha:opacity});}
+  g.circle(p.x,p.y,3).fill({color:0xffdf9b,alpha:opacity});return;
+ }
  if(!detailed){
   // Keep each caster's signature readable while only three full effects compete for space.
   const colors={mirror:0xb1e8ff,umbrella:0xff917d,charge:0x7fe3b0,matrix:0xffd572,thunder:0xb4b1ff,slam:0xdba16b,spear:0x82d5ff,formation:0xd2b17d,dragonfire:0xffa45e,hook:0x72e0db,fan:0xff9ecb};
@@ -13,7 +22,7 @@ export function drawSignature(g:Graphics,s:Signature,time:number,focused:boolean
   else g.moveTo(x-16,y+12).quadraticCurveTo(x,y-3,x+16,y+12).stroke({color:ink,width:3,alpha:alpha*.65});
   return;
  }
- const angle=Math.atan2(dy,dx),travel=Math.sin(Math.PI*f)*130,px=x+dx*travel,py=y+dy*travel;
+
  if(s.kind==='matrix'){
   // Floating cubic blocks, deliberately hollow so feet and health bars stay visible.
   for(const side of [-1,1]){const bx=x+dx*65-dy*side*22,by=y+dy*65+dx*side*22,r=13;
@@ -53,11 +62,6 @@ export function drawSignature(g:Graphics,s:Signature,time:number,focused:boolean
   const length=Math.sin(Math.PI*f)*150,bx=x+dx*length,by=y+dy*length;
   for(let k=0;k<7;k++){const t=k/7;g.ellipse(x+dx*length*t,y+dy*length*t,3,2).stroke({color:0x72e0db,width:1.5,alpha});}
   g.moveTo(bx-dx*10,by-dy*10).lineTo(bx+dx*8,by+dy*8).lineTo(bx+dy*10,by-dx*10).lineTo(bx-dx*5+dy*7,by-dy*5-dx*7).stroke({color:0xa0f5eb,width:3,alpha});return;
- }
- if(s.kind==='fan'){
-  const spin=angle+f*6;
-  g.moveTo(px,py).arc(px,py,22,spin-.9,spin+.9).closePath().fill({color:0xff9ecb,alpha:alpha*.65}).stroke({color:0xffd9e8,width:1.5,alpha});
-  for(let k=-1;k<=1;k++)g.moveTo(px,py).lineTo(px+Math.cos(spin+k*.7)*22,py+Math.sin(spin+k*.7)*22).stroke({color:0xffe5cd,width:1,alpha});return;
  }
  if(s.kind==='mirror'){
   g.ellipse(x+dx*30,y+dy*30,70,48).stroke({color:c,width:1.5,alpha:alpha*.6});

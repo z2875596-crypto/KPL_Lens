@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {World} from './engine';
-import {updateSignature,signatureDestination,HERO_SIGNATURES,type Signature} from './signature';
+import {fanPosition,updateSignature,signatureDestination,HERO_SIGNATURES,type Signature} from './signature';
 test('every active hero casts a distinct signature during a team fight without leaving map bounds',()=>{
  const w=new World(2),seen=new Set<string>();
  w.moments=[{time:12,lane:1,kind:'团战四杀',points:500,done:false,winner:0}];
@@ -39,3 +39,11 @@ test('umbrella returns to cast origin, charge stays bounded, and recovery cancel
  h.recovery='recall';updateSignature(h,enemy,1.5);assert.equal(h.signature,null);
 });
 
+
+test('Xiaoqiao fan flies out and returns even after attack stops, without starting another cast',()=>{
+ const w=new World(2),h=w.heroes[7],target=w.heroes[2];h.artId=10;h.x=100;h.y=100;target.x=200;target.y=100;h.attacking=true;h.cast=.3;
+ updateSignature(h,target,1);const s=h.signature!;assert.equal(s.kind,'fan');
+ assert.equal(fanPosition(s,1).x,100);assert.equal(fanPosition(s,1.625).x,310);assert.ok(Math.abs(fanPosition(s,2.25).x-100)<.001);
+ h.attacking=false;updateSignature(h,target,1.8);assert.equal(h.signature,s);
+ updateSignature(h,target,2.3);assert.equal(h.signature,null);updateSignature(h,target,10);assert.equal(h.signature,null);
+});

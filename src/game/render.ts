@@ -117,6 +117,7 @@ export async function createArena(el:HTMLDivElement,getWorld:()=>World,getDirect
    const enemy=world.heroes.find(o=>o.id===h.targetId),active=world.activeMoments.find(e=>world.participates(h,e));
    const p=h.neutralId?world.neutrals.find(n=>n.id===h.neutralId&&n.hp>0):enemy;
    if(!p||Math.hypot(p.x-h.x,p.y-h.y)>310)return;
+   if(h.signature?.kind==='fan')return; // The fan replaces generic mage bolts during this cast.
    const phase=h.cast,c=teamColor(h.team),dx=p.x-h.x,dy=p.y-h.y,angle=Math.atan2(dy,dx);
    // Anticipation, release, contact, recovery use one shared cast clock.
    if(phase<.22){effects.ellipse(h.x,h.y+15,23,12).stroke({color:c,width:2,alpha:phase/.22});}

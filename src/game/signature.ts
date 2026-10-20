@@ -5,10 +5,10 @@ export type Signature = { kind:SignatureKind; at:number; x:number; y:number; dx:
 export const HERO_SIGNATURES:readonly SignatureKind[]=['mirror','umbrella','matrix','thunder','slam','charge','spear','formation','dragonfire','hook','fan'];
 // Only current combat observations can start a cast; no event schedule is read here.
 export function updateSignature(h:Hero,target:Hero|undefined,time:number){
- if(h.hp<=0||h.recovery!=='none'||!h.attacking){h.signature=null;return;}
+ if(h.hp<=0||h.recovery!=='none'||(!h.attacking&&h.signature?.kind!=='fan')){h.signature=null;return;}
  if(h.signature&&time-h.signature.at>=1.25)h.signature=null;
  const kind=HERO_SIGNATURES[h.artId];
- if(!kind||h.signature||time<h.nextSignature||h.cast<.22||h.cast>.4||!target||target.hp<=0)return;
+ if(!h.attacking||!kind||h.signature||time<h.nextSignature||h.cast<.22||h.cast>.4||!target||target.hp<=0)return;
  const dx=target.x-h.x,dy=target.y-h.y,len=Math.hypot(dx,dy);
  if(len>260||len<1)return;
  h.signature={kind,at:time,x:h.x,y:h.y,dx:dx/len,dy:dy/len};
@@ -25,3 +25,10 @@ export function signatureDestination(s:Signature,time:number){
  return {x:s.x+dx*distance,y:s.y+dy*distance};
 }
 
+
+// An outbound leg and a return leg, with a fixed launch direction.
+export function fanPosition(s:Signature,time:number){
+ const f=Math.max(0,Math.min(1,(time-s.at)/1.25));
+ const distance=210*Math.sin(Math.PI*f);
+ return {x:s.x+s.dx*distance,y:s.y+s.dy*distance-18,spin:Math.atan2(s.dy,s.dx)+f*Math.PI*4};
+}
