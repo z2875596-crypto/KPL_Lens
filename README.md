@@ -1,5 +1,9 @@
 # KPL Lens · KPL 导播挑战 0.13
 
+在线试玩：https://z2875596-crypto.github.io/KPL_Lens/ （手机建议横屏）
+
+GitHub Actions 会在 `main` 更新后运行测试、构建并发布 GitHub Pages。游戏在浏览器本地运行，无需登录。
+
 采用 AI 绘制 Q 版同人素材的非官方粉丝 H5 游戏。React + TypeScript + Vite + PixiJS。
 
 ## 启动与验证

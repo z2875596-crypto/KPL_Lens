@@ -1,7 +1,7 @@
 import {Assets,Container,Graphics,Rectangle,Sprite,Texture,Text} from 'pixi.js';
 import {CAMPS,DRAGON,OVERLORD} from './map';
 import type {World} from './engine';
-export const MONSTER_ATLAS='/heroes/monsters-v2.png';
+export const MONSTER_ATLAS='./heroes/monsters-v2.png';
 export async function createMonsters(layer:Container,mini:boolean){
  const atlas=await Assets.load<Texture>(MONSTER_ATLAS);
  atlas.source.autoGenerateMipmaps=true;atlas.source.scaleMode='linear';

@@ -1,4 +1,4 @@
-export const HERO_ATLAS='/heroes/chibi-atlas-v1.png';
+export const HERO_ATLAS='./heroes/chibi-atlas-v1.png';
 // Frame coordinates crop the generated atlas at runtime; original pixels stay intact.
 export const HERO_ART=[
  {name:'镜',frame:[0,0,375,378],face:[150,100,130,125]},
