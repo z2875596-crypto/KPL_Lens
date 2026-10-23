@@ -1,3 +1,4 @@
+import { steerAround, safeStep } from './terrain';
 import { updateCombos } from './combo';
 import { createNeutrals, hitNeutral, respawnNeutrals, isObjective, objectiveId } from './neutrals';
 import { updateSignature, signatureDestination, type Signature } from './signature';
@@ -55,7 +56,7 @@ export class World {
    if(h.recovery==='none'&&!e&&h.hp<35){h.recovery='retreat';h.recoveryAt=this.time;}
    if(h.recovery!=='none'){
     const base=BASES[h.team];h.attacking=false;h.vx=0;h.vy=0;
-    if(h.recovery==='retreat'){const dx=base.x-h.x,dy=base.y-h.y,len=Math.hypot(dx,dy);if(len>1){h.x+=dx/len*Math.min(len,100*STEP);h.y+=dy/len*Math.min(len,100*STEP);}if(this.time-h.recoveryAt>=2.5){h.recovery='recall';h.recoveryAt=this.time;}}
+    if(h.recovery==='retreat'){const waypoint=steerAround(h,base,this.time),dx=waypoint.x-h.x,dy=waypoint.y-h.y,len=Math.hypot(dx,dy);if(len>1){const p=safeStep(h,{x:h.x+dx/len*Math.min(len,100*STEP),y:h.y+dy/len*Math.min(len,100*STEP)});h.x=p.x;h.y=p.y;}if(this.time-h.recoveryAt>=2.5){h.recovery='recall';h.recoveryAt=this.time;}}
     else if(h.recovery==='recall'){if(this.time-h.recoveryAt>=3){h.x=base.x;h.y=base.y;h.recovery='fountain';h.recoveryAt=this.time;}}
     else {h.hp=Math.min(100,h.hp+25*STEP);if(h.hp>=100)h.recovery='none';}
     continue;
@@ -102,11 +103,14 @@ export class World {
    if(signatureTarget&&h.attacking&&!h.dashing){target=signatureTarget;h.dashing=true;}
    if(!h.dashing){target.x+=Math.sin(this.time*.8+h.id)*7;target.y+=Math.cos(this.time*.9+h.id)*6;}
    for(const other of this.heroes){const separation=Math.hypot(h.x-other.x,h.y-other.y);if(other.id!==h.id&&other.hp>0&&separation>0&&separation<52){target.x+=(h.x-other.x)/separation*(52-separation)*1.1;target.y+=(h.y-other.y)/separation*(52-separation)*1.1;}}
+   const crossesWall=h.dashing&&[0,1,6].includes(h.artId); // Mirror, umbrella blink, and spear leap only.
+   if(!crossesWall)target=steerAround(h,target,this.time);
    const dx=target.x-h.x,dy=target.y-h.y,len=Math.hypot(dx,dy),speed=h.dashing?520:involved?105:65;
    const casting=h.attacking&&h.cast>.12&&h.cast<.4&&!h.dashing;
    const desired=Math.min(speed,len*4)*(casting?.18:1),blend=h.dashing?.65:.22;
    h.vx+=(len>1?dx/len*desired-h.vx:-h.vx)*blend;h.vy+=(len>1?dy/len*desired-h.vy:-h.vy)*blend;
-   h.x=Math.max(35,Math.min(965,h.x+h.vx*STEP));h.y=Math.max(35,Math.min(965,h.y+h.vy*STEP));
+   const next={x:Math.max(35,Math.min(965,h.x+h.vx*STEP)),y:Math.max(35,Math.min(965,h.y+h.vy*STEP))};
+   const moved=crossesWall?next:safeStep(h,next);h.x=moved.x;h.y=moved.y;
    if(!h.attacking&&Math.abs(h.vx)>8)h.facing=h.vx<0?-1:1;
 
   }

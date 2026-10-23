@@ -1,3 +1,4 @@
+import { ROCKS } from './terrain';
 import { isObjective } from './neutrals';
 import { createMonsters } from './monsterArt';
 import { drawSignature } from './signatureFX';
@@ -17,11 +18,12 @@ function tree(g:Graphics,x:number,y:number,size:number){
  g.poly([x-size*.6,y-6,x,y-size*1.7,x+size*.28,y-17,x+size*.15,y-4]).fill(0x3c7560);g.moveTo(x-size*.5,y+1).lineTo(x,y-8).lineTo(x+size*.5,y+2).stroke({color:0x51846b,width:2,alpha:.5});
 }
 function stone(g:Graphics,x:number,y:number,r:number){g.poly([x-r,y,x-r*.7,y-r*.65,x+r*.35,y-r,x+r,y-r*.25,x+r*.8,y+r*.5,x-r*.3,y+r*.65]).fill(0x4b6461).stroke({color:0x213b39,width:3});g.poly([x-r,y,x-r*.7,y-r*.65,x+r*.35,y-r,x+r*.45,y-r*.3,x-r*.2,y]).fill(0x72817a);}
-function terrain(g:Graphics){
+function terrain(g:Graphics,mini=false){
  g.roundRect(20,20,960,960,60).fill(0x254d41).stroke({width:18,color:0x162f32});
  // Fine deterministic grass flecks; generated once, never per frame.
  for(let i=0;i<550;i++){const x=40+(i*137%920),y=40+(i*239%920);g.moveTo(x,y).lineTo(x+2,y-4).stroke({color:i%2?0x68825c:0x436e4c,width:1,alpha:.35});}
  const river=[{x:170,y:70},{x:240,y:215},{x:390,y:390},{x:530,y:480},{x:630,y:620},{x:800,y:800},{x:920,y:920}];
+ if(!mini){line(g,river.map(p=>({x:p.x+5,y:p.y+9})),0x102f31,112);line(g,river,0x698377,104);line(g,river,0x39594e,94);}
  line(g,river,0x183e40,100);line(g,river,0x567a66,85);line(g,river,0x235c65,74);line(g,river,0x307c82,56);line(g,river,0x438d8d,2,.5);
  for(const r of ROUTES){line(g,r,0x163b34,79);line(g,r,0x879078,63);line(g,r,0x657b68,56);line(g,r,0x9da58a,2,.35);}
  for(let lane=0;lane<3;lane++)for(let i=1;i<35;i++){const p=routePoint(lane,i/35);g.roundRect(p.x-13,p.y-8,26,16,3).fill({color:i%3?0x91a18b:0xb1b49a,alpha:.3}).stroke({color:0x344f44,width:1,alpha:.5});}
@@ -30,10 +32,24 @@ function terrain(g:Graphics){
  const groves=[[240,320],[360,280],[420,340],[175,470],[240,640],[315,725],[490,700],[590,780],[695,695],[795,655],[810,360],[690,275],[560,300],[500,230],[380,820],[800,250]];
  groves.filter(([x,y])=>Math.hypot(x-OVERLORD.x,y-OVERLORD.y)>95).forEach(([x,y],i)=>{stone(g,x+15,y+26,24);tree(g,x-16,y,24);tree(g,x+15,y-18,29);tree(g,x+39,y+11,21);if(i%2)tree(g,x-37,y+23,19);});
  for(const [x,y] of [[220,270],[370,440],[560,630],[780,725],[520,385],[670,690]]){g.ellipse(x,y,37,17).fill(0x244e3b);for(let i=0;i<16;i++){const xx=x-32+i*4,yy=y+Math.sin(i*4)*9;g.moveTo(xx-4,yy+8).lineTo(xx,yy-12-i%3*4).lineTo(xx+4,yy+6).fill(i%2?0x719454:0x47764a);}}
- g.ellipse(OVERLORD.x,OVERLORD.y,73,55).fill(0x352e50).stroke({width:10,color:0x777985});g.ellipse(OVERLORD.x,OVERLORD.y,57,40).fill(0x4c4162);
- // Dragon pool with a broken circular stone wall, entered from river.
- g.ellipse(DRAGON.x,DRAGON.y,83,67).fill(0x153c48).stroke({width:12,color:0x6b7b75});g.ellipse(DRAGON.x,DRAGON.y,68,52).fill(0x24566a).stroke({width:2,color:0x87a7a1});
- for(let i=0;i<9;i++){const a=i*.55-1.6;stone(g,DRAGON.x+Math.cos(a)*83,DRAGON.y+Math.sin(a)*63,14);}
+ // Recessed basins; the shared rock geometry below leaves real walkable entrances.
+ for(const [p,purple] of [[OVERLORD,true],[DRAGON,false]] as const){
+  g.ellipse(p.x+4,p.y+10,92,78).fill(0x122d32);
+  g.ellipse(p.x,p.y,91,76).fill(purple?0x49485d:0x64715e);
+  g.ellipse(p.x,p.y+3,79,65).fill(purple?0x302d48:0x163e4a);
+  g.ellipse(p.x,p.y+9,66,49).fill(purple?0x403955:0x28626b);
+  if(!mini){g.ellipse(p.x-9,p.y-5,48,32).stroke({color:purple?0xa291ba:0x9ccec4,width:1.5,alpha:.35});for(let i=0;i<7;i++){const a=i*.85;g.poly([p.x+Math.cos(a)*61,p.y+Math.sin(a)*44,p.x+Math.cos(a+.06)*69,p.y+Math.sin(a+.06)*50,p.x+Math.cos(a+.12)*61,p.y+Math.sin(a+.12)*44]).fill({color:purple?0xae98c4:0xe4c780,alpha:.45});}}
+ }
+ for(const rock of ROCKS){const {x,y,r,height}=rock;
+  if(mini){g.circle(x,y,r).fill(rock.pit==='overlord'?0x656178:0x748573);continue;}
+  const top=rock.pit==='overlord'?0x8b8297:rock.pit==='tyrant'?0xa0a18a:0x819481;
+  g.ellipse(x+8,y+9,r+8,r*.65).fill({color:0x102b2d,alpha:.5});
+  g.poly([x-r,y,x-r,y-height,x-r*.4,y-height-r*.5,x+r*.65,y-height-r*.4,x+r,y-height+3,x+r,y+5,x+r*.25,y+r*.55,x-r*.7,y+r*.4]).fill(0x38514f).stroke({color:0x253f3e,width:2});
+  g.poly([x-r,y-height,x-r*.4,y-height-r*.5,x+r*.65,y-height-r*.4,x+r,y-height+3,x+r*.1,y-height+r*.45,x-r*.65,y-height+r*.3]).fill(top).stroke({color:0xb0b9a0,width:1,alpha:.6});
+  g.moveTo(x+r*.1,y-height+r*.45).lineTo(x+r*.1,y+r*.55).stroke({color:0x233d3c,width:2,alpha:.65});
+  g.moveTo(x-r*.6,y-height+2).lineTo(x-r*.1,y-height-4).lineTo(x+r*.3,y-height-2).stroke({color:0xc5c9b1,width:1,alpha:.45});
+  if(!rock.pit)g.ellipse(x-r*.25,y-height-3,r*.5,4).fill({color:0x527e57,alpha:.8});
+ }
  for(const [team,b] of BASES.entries()){
   const color=teamColor(team);g.circle(b.x,b.y,90).fill(0x3c5754).stroke({color:0x94a297,width:5});g.circle(b.x,b.y,70).stroke({color,width:3,alpha:.4});g.circle(b.x,b.y,47).fill(0x283d43).stroke({color:0xa6a98b,width:5});
   for(let i=0;i<8;i++){const a=i*Math.PI/4;line(g,[{x:b.x+Math.cos(a)*51,y:b.y+Math.sin(a)*51},{x:b.x+Math.cos(a)*65,y:b.y+Math.sin(a)*65}],color,3,.5);}
@@ -64,7 +80,7 @@ export async function createArena(el:HTMLDivElement,getWorld:()=>World,getDirect
  const app=new Application();await app.init({resizeTo:el,antialias:true,background:0x102b30,resolution:Math.min(3,Math.max(2,devicePixelRatio)),autoDensity:true});el.appendChild(app.canvas);
  const mini=view==='map';const resizeObserver=new ResizeObserver(()=>{app.resize();if(view==='main')getDirector().camera.setViewport(app.screen.width,app.screen.height);});resizeObserver.observe(el);
  const scene=new Container(),ground=new Graphics(),structures=new Graphics(),effects=new Graphics(),units=new Container(),overFX=new Graphics();
- scene.addChild(ground,structures,effects,overFX,units);app.stage.addChild(scene);terrain(ground);
+ scene.addChild(ground,structures,effects,overFX,units);app.stage.addChild(scene);terrain(ground,mini);
  const atlas=await Assets.load<Texture>(HERO_ATLAS);
  atlas.source.autoGenerateMipmaps=true;atlas.source.scaleMode='linear';
  const heroTextures=HERO_ART.map(art=>new Texture({source:atlas.source,frame:new Rectangle(...art.frame)}));
